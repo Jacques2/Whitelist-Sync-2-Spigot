@@ -1,6 +1,8 @@
 package pw.twpi.whitelistsync2;
 
-import pw.twpi.whitelistsync2.commands.CommandOp;
+import org.bukkit.Bukkit;
+import pw.twpi.whitelistsync2.Listener.PlayerPreLoginListener;
+import pw.twpi.whitelistsync2.Listener.TabCompleter;
 import pw.twpi.whitelistsync2.commands.CommandWhitelist;
 import pw.twpi.whitelistsync2.service.BaseService;
 import pw.twpi.whitelistsync2.service.MySqlService;
@@ -10,7 +12,6 @@ import org.bukkit.Server;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class WhitelistSync2 extends JavaPlugin {
@@ -32,10 +33,9 @@ public class WhitelistSync2 extends JavaPlugin {
         LOGGER.info("Setting up Whitelist Sync!");
 
         SERVER_FILEPATH = getServer().getWorldContainer().getAbsolutePath();
+        Bukkit.getPluginManager().registerEvents(new PlayerPreLoginListener(this), this);
 
         LOGGER.info("Server Filepath: " + SERVER_FILEPATH);
-
-        server.setWhitelist(true);
 
         // Setup config
         LoadConfiguration();
@@ -44,7 +44,7 @@ public class WhitelistSync2 extends JavaPlugin {
         if(LoadServices()) {
             // Commands
             this.getCommand("wl").setExecutor(new CommandWhitelist(this, whitelistService));
-            this.getCommand("wlop").setExecutor(new CommandOp(this, whitelistService));
+            this.getCommand("wl").setTabCompleter(new TabCompleter());
 
             StartSyncThread(this, whitelistService);
         }

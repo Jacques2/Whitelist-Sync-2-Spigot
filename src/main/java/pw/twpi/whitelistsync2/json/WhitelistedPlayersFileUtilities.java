@@ -36,7 +36,7 @@ public class WhitelistedPlayersFileUtilities {
             WhitelistedPlayer whitelistedPlayer = new WhitelistedPlayer();
             whitelistedPlayer.setUuid(uuid);
             whitelistedPlayer.setName(name);
-            whitelistedPlayer.setWhitelisted(true);
+            whitelistedPlayer.setIDWhitelisted(true);
 
 
             users.add(whitelistedPlayer);

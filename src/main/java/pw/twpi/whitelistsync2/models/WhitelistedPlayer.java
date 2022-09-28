@@ -1,6 +1,8 @@
 package pw.twpi.whitelistsync2.models;
 
 
+import java.util.ArrayList;
+
 /**
  * DAO for a whitelisted user
  * @author Richard Nader, Jr. <rmnader@svsu.edu>
@@ -9,7 +11,9 @@ public class WhitelistedPlayer {
 
     private String uuid;
     private String name;
-    private boolean isWhitelisted;
+    private boolean isIDWhitelisted;
+
+    public static ArrayList<WhitelistedPlayer> whitelistedPlayers = new ArrayList<>();
 
     public WhitelistedPlayer() {
     }
@@ -17,7 +21,7 @@ public class WhitelistedPlayer {
     public WhitelistedPlayer(String uuid, String name, boolean isWhitelisted) {
         this.uuid = uuid;
         this.name = name;
-        this.isWhitelisted = isWhitelisted;
+        this.isIDWhitelisted = isWhitelisted;
     }
 
     public String getUuid() {
@@ -36,12 +40,12 @@ public class WhitelistedPlayer {
         this.name = name;
     }
 
-    public boolean isWhitelisted() {
-        return isWhitelisted;
+    public boolean isIDWhitelisted() {
+        return isIDWhitelisted;
     }
 
-    public void setWhitelisted(boolean whitelisted) {
-        isWhitelisted = whitelisted;
+    public void setIDWhitelisted(boolean IDWhitelisted) {
+        isIDWhitelisted = IDWhitelisted;
     }
 
     @Override
@@ -49,7 +53,7 @@ public class WhitelistedPlayer {
         return "WhitelistedPlayer{" +
                 "uuid='" + uuid + '\'' +
                 ", name='" + name + '\'' +
-                ", isWhitelisted=" + isWhitelisted +
+                ", isWhitelisted=" + isIDWhitelisted +
                 '}';
     }
 }

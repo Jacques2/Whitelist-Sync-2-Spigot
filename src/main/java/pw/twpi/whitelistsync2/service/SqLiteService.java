@@ -1,9 +1,7 @@
 package pw.twpi.whitelistsync2.service;
 
 import pw.twpi.whitelistsync2.WhitelistSync2;
-import pw.twpi.whitelistsync2.json.OppedPlayersFileUtilities;
 import pw.twpi.whitelistsync2.json.WhitelistedPlayersFileUtilities;
-import pw.twpi.whitelistsync2.models.OppedPlayer;
 import pw.twpi.whitelistsync2.models.WhitelistedPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -126,57 +124,8 @@ public class SqLiteService implements BaseService {
     }
 
     @Override
-    public ArrayList<OppedPlayer> getOppedPlayersFromDatabase() {
-        // ArrayList for opped players.
-        ArrayList<OppedPlayer> oppedPlayers = new ArrayList<>();
-
-        if (WhitelistSync2.CONFIG.getBoolean("general.sync-ops")) {
-            try {
-                // Keep track of records.
-                int records = 0;
-
-                // Connect to database.
-                Connection conn = DriverManager.getConnection("jdbc:sqlite:" + WhitelistSync2.CONFIG.getString("sqlite.database-path"));
-                long startTime = System.currentTimeMillis();
-
-                String sql = "SELECT uuid, name FROM op WHERE isOp = 1;";
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                ResultSet rs = stmt.executeQuery();
-
-                // Save queried return to names list.
-                while (rs.next()) {
-                    oppedPlayers.add(new OppedPlayer(rs.getString("uuid"), rs.getString("name"), true));
-                    records++;
-                }
-
-                // Total time taken.
-                long timeTaken = System.currentTimeMillis() - startTime;
-
-                // WhitelistSync2.LOGGER.debug("Database pulled opped players | Took " + timeTaken + "ms | Read " + records + " records.");
-
-                stmt.close();
-                conn.close();
-            } catch (SQLException e) {
-                WhitelistSync2.LOGGER.severe("Error querying opped players from database!");
-                e.printStackTrace();
-            }
-
-        } else {
-            WhitelistSync2.LOGGER.severe("Op list syncing is currently disabled in your config. "
-                    + "Please enable it and restart the server to use this feature.");
-        }
-
-        return oppedPlayers;
-    }
-
-    @Override
     public ArrayList<WhitelistedPlayer> getWhitelistedPlayersFromLocal() {
         return WhitelistedPlayersFileUtilities.getWhitelistedPlayers();
-    }
-
-    @Override
-    public ArrayList<OppedPlayer> getOppedPlayersFromLocal() {
-        return OppedPlayersFileUtilities.getOppedPlayers();
     }
 
     @Override
@@ -213,50 +162,6 @@ public class SqLiteService implements BaseService {
         } catch (SQLException e) {
             WhitelistSync2.LOGGER.severe("Failed to update database with local records.");
             e.printStackTrace();
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean copyLocalOppedPlayersToDatabase() {
-        // Load local opped players to memory.
-        ArrayList<OppedPlayer> oppedPlayers = OppedPlayersFileUtilities.getOppedPlayers();
-
-        if (WhitelistSync2.CONFIG.getBoolean("general.sync-ops")) {
-            // TODO: Start job on thread to avoid lag?
-            // Keep track of records.
-            int records = 0;
-            try {
-                // Connect to database.
-                Connection conn = DriverManager.getConnection("jdbc:sqlite:" + WhitelistSync2.CONFIG.getString("sqlite.database-path"));
-                long startTime = System.currentTimeMillis();
-                // Loop through local opped players and insert into database.
-                for (OppedPlayer player : oppedPlayers) {
-
-                    if (player.getUuid() != null && player.getName() != null) {
-                        PreparedStatement stmt = conn.prepareStatement("INSERT OR REPLACE INTO op(uuid, name, isOp) VALUES (?, ?, 1)");
-                        stmt.setString(1, player.getUuid());
-                        stmt.setString(2, player.getName());
-                        stmt.executeUpdate();
-                        stmt.close();
-
-                        records++;
-                    }
-                }
-                // Record time taken.
-                long timeTaken = System.currentTimeMillis() - startTime;
-                // WhitelistSync2.LOGGER.debug("Op table updated | Took " + timeTaken + "ms | Wrote " + records + " records.");
-                conn.close();
-
-                return true;
-            } catch (SQLException e) {
-                WhitelistSync2.LOGGER.severe("Failed to update database with local records.");
-                e.printStackTrace();
-            }
-        } else {
-            WhitelistSync2.LOGGER.severe("Op list syncing is currently disabled in your config. "
-                    + "Please enable it and restart the server to use this feature.");
         }
 
         return false;
@@ -317,65 +222,6 @@ public class SqLiteService implements BaseService {
     }
 
     @Override
-    public boolean copyDatabaseOppedPlayersToLocal(Server server) {
-
-        if (WhitelistSync2.CONFIG.getBoolean("general.sync-ops")) {
-
-            try {
-                int records = 0;
-
-                Connection conn = DriverManager.getConnection("jdbc:sqlite:" + WhitelistSync2.CONFIG.getString("sqlite.database-path"));
-                long startTime = System.currentTimeMillis();
-
-                String sql = "SELECT name, uuid, isOp FROM op;";
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                ResultSet rs = stmt.executeQuery();
-
-                ArrayList<OppedPlayer> localOppedPlayers = OppedPlayersFileUtilities.getOppedPlayers();
-
-                while (rs.next()) {
-                    String uuid = rs.getString("uuid");
-                    String name = rs.getString("name");
-                    int opped = rs.getInt("isOp");
-
-                    if (opped == 1) {
-                        if (localOppedPlayers.stream().noneMatch(o -> o.getUuid().equals(uuid))) {
-                            try {
-                                Bukkit.getOfflinePlayer(UUID.fromString(uuid)).setOp(true);
-                                // WhitelistSync2.LOGGER.debug("Opped " + name + ".");
-                                records++;
-                            } catch (NullPointerException e) {
-                                WhitelistSync2.LOGGER.severe("Player is null?");
-                                e.printStackTrace();
-                            }
-                        }
-                    } else {
-                        if (localOppedPlayers.stream().anyMatch(o -> o.getUuid().equals(uuid))) {
-                            Bukkit.getOfflinePlayer(UUID.fromString(uuid)).setOp(false);
-                            // WhitelistSync2.LOGGER.debug("Deopped " + name + ".");
-                            records++;
-                        }
-                    }
-                }
-                long timeTaken = System.currentTimeMillis() - startTime;
-                // WhitelistSync2.LOGGER.debug("Copied op database to local | Took " + timeTaken + "ms | Wrote " + records + " records.");
-
-                stmt.close();
-                conn.close();
-                return true;
-            } catch (SQLException e) {
-                WhitelistSync2.LOGGER.severe("Error querying opped players from database!");
-                e.printStackTrace();
-            }
-        } else {
-            WhitelistSync2.LOGGER.severe("Op list syncing is currently disabled in your config. "
-                    + "Please enable it and restart the server to use this feature.");
-        }
-
-        return false;
-    }
-
-    @Override
     public boolean addWhitelistPlayer(OfflinePlayer player) {
         try {
             // Open connection
@@ -384,7 +230,7 @@ public class SqLiteService implements BaseService {
             // Start time.
             long startTime = System.currentTimeMillis();
 
-            String sql = "INSERT OR REPLACE INTO whitelist(uuid, name, whitelisted) VALUES (?, ?, 1)";
+            String sql = "INSERT OR REPLACE INTO whitelist(uuid, name, whitelisted) VALUES (?, ?, 0)";
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, player.getUniqueId().toString());
             stmt.setString(2, player.getName());
@@ -406,36 +252,7 @@ public class SqLiteService implements BaseService {
     }
 
     @Override
-    public boolean addOppedPlayer(OfflinePlayer player) {
-        if (WhitelistSync2.CONFIG.getBoolean("general.sync-ops")) {
-            try {
-                // Open connection
-                Connection conn = DriverManager.getConnection("jdbc:sqlite:" + WhitelistSync2.CONFIG.getString("sqlite.database-path"));
-
-                // Start time.
-                long startTime = System.currentTimeMillis();
-
-                PreparedStatement stmt = conn.prepareStatement("INSERT OR REPLACE INTO op(uuid, name, isOp) VALUES (?, ?, 1)");
-                stmt.setString(1, player.getUniqueId().toString());
-                stmt.setString(2, player.getName());
-                stmt.executeUpdate();
-
-                // Time taken.
-                long timeTaken = System.currentTimeMillis() - startTime;
-                // WhitelistSync2.LOGGER.debug("Database opped " + player.getName() + " | Took " + timeTaken + "ms");
-                stmt.close();
-                conn.close();
-                return true;
-
-            } catch (SQLException e) {
-                WhitelistSync2.LOGGER.severe("Error opping " + player.getName() + " !");
-                e.printStackTrace();
-            }
-        } else {
-            WhitelistSync2.LOGGER.severe("Op list syncing is currently disabled in your config. "
-                    + "Please enable it and restart the server to use this feature.");
-        }
-
+    public boolean updateWhitelistPlayerToID(String name, String uuid) {
         return false;
     }
 
@@ -463,40 +280,6 @@ public class SqLiteService implements BaseService {
         } catch (SQLException e) {
             WhitelistSync2.LOGGER.severe("Error removing " + player.getName() + " to whitelist database!");
             e.printStackTrace();
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean removeOppedPlayer(OfflinePlayer player) {
-        if (WhitelistSync2.CONFIG.getBoolean("general.sync-ops")) {
-            try {
-                // Open connection
-                Connection conn = DriverManager.getConnection("jdbc:sqlite:" + WhitelistSync2.CONFIG.getString("sqlite.database-path"));
-
-                // Start time.
-                long startTime = System.currentTimeMillis();
-
-                PreparedStatement stmt = conn.prepareStatement("INSERT OR REPLACE INTO op(uuid, name, isOp) VALUES (?, ?, 0)");
-                stmt.setString(1, player.getUniqueId().toString());
-                stmt.setString(2, player.getName());
-                stmt.executeUpdate();
-
-                // Time taken
-                long timeTaken = System.currentTimeMillis() - startTime;
-                // WhitelistSync2.LOGGER.debug("Deopped " + player.getName() + " | Took " + timeTaken + "ms");
-                stmt.close();
-                conn.close();
-                return true;
-
-            } catch (SQLException e) {
-                WhitelistSync2.LOGGER.severe("Error deopping " + player.getName() + ".");
-                e.printStackTrace();
-            }
-        } else {
-            WhitelistSync2.LOGGER.severe("Op list syncing is currently disabled in your config. "
-                    + "Please enable it and restart the server to use this feature.");
         }
 
         return false;

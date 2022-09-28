@@ -21,10 +21,6 @@ public class SyncThread {
                 while (plugin.isEnabled()) {
                     service.copyDatabaseWhitelistedPlayersToLocal(plugin.getServer());
 
-                    if (plugin.getConfig().getBoolean("general.sync-ops")) {
-                        service.copyDatabaseOppedPlayersToLocal(plugin.getServer());
-                    }
-
                     try {
                         Thread.sleep(plugin.getConfig().getInt("mysql.sync-time") * 1000);
                     } catch (InterruptedException ignored) {
@@ -34,10 +30,6 @@ public class SyncThread {
 
                 while (plugin.isEnabled()) {
                     service.copyDatabaseWhitelistedPlayersToLocal(plugin.getServer());
-
-                    if (plugin.getConfig().getBoolean("general.sync-ops")) {
-                        service.copyDatabaseOppedPlayersToLocal(plugin.getServer());
-                    }
 
                     try {
                         Thread.sleep(plugin.getConfig().getInt("sqlite.sync-time") * 1000);
