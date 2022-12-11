@@ -70,7 +70,7 @@ public class MySqlService implements BaseService {
                         + "`uuid` VARCHAR(60) NOT NULL,"
                         + "`name` VARCHAR(20) NOT NULL,"
                         + "`whitelisted` TINYINT NOT NULL DEFAULT 1,"
-                        + "PRIMARY KEY (`uuid`)"
+                        + "PRIMARY KEY (`name`)"
                         + ")";
                 PreparedStatement stmt2 = conn.prepareStatement(sql);
                 stmt2.execute();
