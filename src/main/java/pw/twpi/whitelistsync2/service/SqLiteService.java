@@ -256,6 +256,10 @@ public class SqLiteService implements BaseService {
         return false;
     }
 
+    public boolean updateWhitelistPlayerName(String name, String uuid) {
+        return false;
+    }
+
     @Override
     public boolean removeWhitelistPlayer(OfflinePlayer player) {
         try {

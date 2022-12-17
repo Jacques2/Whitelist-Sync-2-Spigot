@@ -326,6 +326,30 @@ public class MySqlService implements BaseService {
         return false;
     }
 
+    @Override
+    public boolean updateWhitelistPlayerName(String name, String uuid) {
+        try {
+            // Open connection=
+            Connection conn = DriverManager.getConnection(url, username, password);
+            long startTime = System.currentTimeMillis();
+
+            String sql = "UPDATE " + databaseName + ".whitelist SET name = '" + name + "' WHERE uuid = '" + uuid + "';";
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.execute();
+            // Time taken.
+            long timeTaken = System.currentTimeMillis() - startTime;
+            stmt.close();
+            conn.close();
+            return true;
+
+        } catch (SQLException e) {
+            WhitelistSync2.LOGGER.severe("Error adding " + uuid + " to whitelist database!");
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
 
     @Override
     public boolean removeWhitelistPlayer(OfflinePlayer player) {

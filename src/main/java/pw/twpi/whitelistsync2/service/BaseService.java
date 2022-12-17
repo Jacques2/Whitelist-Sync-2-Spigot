@@ -26,6 +26,7 @@ public interface BaseService {
     // Addition functions
     public boolean addWhitelistPlayer(OfflinePlayer player);
     public boolean updateWhitelistPlayerToID(String name, String uuid);
+    public boolean updateWhitelistPlayerName(String name, String uuid);
 
 
     // Removal functions

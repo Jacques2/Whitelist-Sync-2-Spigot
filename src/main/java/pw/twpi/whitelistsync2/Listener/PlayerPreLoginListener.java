@@ -35,6 +35,11 @@ public class PlayerPreLoginListener implements Listener {
             }
             if (String.valueOf(uuid).equals(player.getUuid()) && player.isIDWhitelisted()){
                 verified = true;
+                if (!player.getName().equals(username)){
+                    WhitelistSync2.LOGGER.info("Username " + player.getName() + " has been changed to " + username);
+                    player.setName(username);
+                    WhitelistSync2.whitelistService.updateWhitelistPlayerName(username,String.valueOf(uuid));
+                }
                 WhitelistSync2.LOGGER.info(username + " connected with UUID");
                 break;
             }
@@ -44,4 +49,6 @@ public class PlayerPreLoginListener implements Listener {
             event.setKickMessage("You are not whitelisted for Divergent SMP!");
         }
     }
+
+
 }
